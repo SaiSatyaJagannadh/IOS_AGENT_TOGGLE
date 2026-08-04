@@ -15,6 +15,7 @@ import mimetypes
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 import msal
@@ -34,6 +35,8 @@ OCR_MODEL = "gemini-2.5-flash"
 # ---------------------------------------------------------------- auth
 
 def get_token():
+    """Return a valid access token. Prompts for device login only the first time; afterwards
+    MSAL refreshes silently, so this is safe to call repeatedly mid-export."""
     client_id = os.getenv("ONENOTE_CLIENT_ID")
     if not client_id:
         sys.exit(
@@ -74,6 +77,42 @@ def get_token():
         TOKEN_CACHE.chmod(0o600)  # token cache is a credential
 
     return result["access_token"]
+
+
+class GraphSession(requests.Session):
+    """Session that survives the two things that reliably kill a long export.
+
+    Graph throttles the OneNote API aggressively, and an access token lasts about an hour —
+    a large section with OCR outlives it. Centralised here so every caller (page listing,
+    page content, image and attachment downloads) is covered by one implementation.
+    """
+
+    MAX_ATTEMPTS = 5
+
+    def __init__(self, token_fn=get_token):
+        super().__init__()
+        self._token_fn = token_fn
+        self.headers["Authorization"] = f"Bearer {token_fn()}"
+
+    def request(self, method, url, **kwargs):  # noqa: D102
+        kwargs.setdefault("timeout", 120)
+        refreshed = False
+        for attempt in range(self.MAX_ATTEMPTS):
+            r = super().request(method, url, **kwargs)
+
+            if r.status_code in (429, 503, 504) and attempt < self.MAX_ATTEMPTS - 1:
+                wait = min(int(r.headers.get("Retry-After", 2 ** attempt)), 120)
+                print(f"    throttled ({r.status_code}), retrying in {wait}s", file=sys.stderr)
+                time.sleep(wait)
+                continue
+
+            if r.status_code == 401 and not refreshed:
+                refreshed = True  # token expired mid-run; refresh once, then give up
+                self.headers["Authorization"] = f"Bearer {self._token_fn()}"
+                continue
+
+            return r
+        return r
 
 
 # ---------------------------------------------------------------- graph
@@ -220,6 +259,26 @@ def page_to_markdown(session, page, assets, do_ocr):
         obj.replace_with(link)  # markdownify drops <object> entirely
 
     body = soup.body or soup
+
+    # OneNote carries emphasis as inline CSS on <span>, not as <b>/<i>. markdownify only reads
+    # tags, so without this every bold and italic run in the notebook is silently flattened.
+    for span in body.find_all("span", style=True):
+        style = span["style"].replace(" ", "").lower()
+        if re.search(r"font-weight:(bold|[6-9]00)", style):
+            span.wrap(soup.new_tag("strong"))
+        if "font-style:italic" in style:
+            span.wrap(soup.new_tag("em"))
+
+    # OneNote tables have no <thead>, so markdownify emits an empty header row and demotes the
+    # real first row to data. Promote it instead.
+    for table in body.find_all("table"):
+        if table.find("th") or table.find("thead"):
+            continue
+        first = table.find("tr")
+        if first:
+            for cell in first.find_all("td"):
+                cell.name = "th"
+
     # Page title becomes the '##' below, so drop the page's own duplicate title heading and
     # demote what's left — keeps one clean hierarchy for the docx outline.
     title = (page.get("title") or "").strip().lower()
@@ -253,8 +312,7 @@ def main():
     ap.add_argument("--no-docx", action="store_true", help="skip .docx conversion")
     args = ap.parse_args()
 
-    session = requests.Session()
-    session.headers["Authorization"] = f"Bearer {get_token()}"
+    session = GraphSession()
 
     sections = list_sections(session)
     if args.list:

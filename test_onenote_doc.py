@@ -90,6 +90,87 @@ def test_page_to_markdown():
     assert "TRANSCRIBED DIAGRAM TEXT" in md and "Text extracted from images" in md
 
 
+ONENOTE_HTML = """<html lang="en-US"><head><title>Normalization</title></head>
+<body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+<div style="position:absolute;left:48px;top:115px;width:624px">
+<h1 style="margin-top:0pt">Normalization</h1>
+<p>A relation is in <span style="font-weight:bold">1NF</span> when every attribute is
+<span style="font-style:italic">atomic</span>.</p>
+<ul><li>no repeating groups<ul><li>nested rule</li></ul></li></ul>
+<table data-id="tbl1">
+<tr><td><p>Form</p></td><td><p>Requirement</p></td></tr>
+<tr><td><p>2NF</p></td><td><p>No partial dependency</p></td></tr>
+</table></div></body></html>"""
+
+
+def test_real_onenote_markup():
+    """Graph returns absolute-positioned divs with emphasis as inline CSS, not <b>/<i>."""
+    with tempfile.TemporaryDirectory() as tmp:
+        assets = Path(tmp) / "assets"
+        assets.mkdir()
+        session = mock.Mock()
+        session.get.return_value = mock.Mock(text=ONENOTE_HTML, raise_for_status=lambda: None)
+        md = od.page_to_markdown(session, {"id": "p", "title": "Normalization"}, assets,
+                                 do_ocr=False)
+
+    # style-based emphasis must survive; markdownify alone drops it
+    assert "**1NF**" in md, md
+    assert "*atomic*" in md, md
+    # first row promoted to header — no invented blank header row
+    assert "| Form | Requirement |" in md, md
+    assert "|  |  |" not in md, md
+    # nested list structure kept
+    assert "nested rule" in md, md
+    # absolute-positioned wrapper divs must not leak through as markup
+    assert "position:absolute" not in md, md
+
+
+def _resp(status, headers=None):
+    return mock.Mock(status_code=status, headers=headers or {})
+
+
+def test_graph_session_retries_throttling():
+    """Graph throttles the OneNote API hard; a 429 must not kill a long export."""
+    replies = [_resp(429, {"Retry-After": "3"}), _resp(429, {"Retry-After": "1"}), _resp(200)]
+    slept = []
+    with mock.patch.object(od.requests.Session, "request", side_effect=replies) as req, \
+         mock.patch.object(od.time, "sleep", slept.append):
+        s = od.GraphSession(token_fn=lambda: "tok")
+        assert s.get("https://graph/x").status_code == 200
+    assert slept == [3, 1], slept          # honours Retry-After rather than a fixed backoff
+    assert req.call_count == 3
+
+
+def test_graph_session_caps_retries():
+    """A permanently throttled endpoint gives up instead of looping forever."""
+    with mock.patch.object(od.requests.Session, "request", return_value=_resp(429)) as req, \
+         mock.patch.object(od.time, "sleep", lambda _s: None):
+        s = od.GraphSession(token_fn=lambda: "tok")
+        assert s.get("https://graph/x").status_code == 429
+    assert req.call_count == od.GraphSession.MAX_ATTEMPTS
+
+
+def test_graph_session_refreshes_expired_token():
+    """Tokens last ~1h; a big section with OCR outlives one, so 401 must refresh in place."""
+    tokens = iter(["old", "new"])
+    with mock.patch.object(od.requests.Session, "request",
+                           side_effect=[_resp(401), _resp(200)]), \
+         mock.patch.object(od.time, "sleep", lambda _s: None):
+        s = od.GraphSession(token_fn=lambda: next(tokens))
+        assert s.headers["Authorization"] == "Bearer old"
+        assert s.get("https://graph/x").status_code == 200
+        assert s.headers["Authorization"] == "Bearer new"
+
+
+def test_graph_session_gives_up_on_repeated_401():
+    """A genuinely revoked grant must surface, not retry-loop on refresh."""
+    with mock.patch.object(od.requests.Session, "request", return_value=_resp(401)) as req, \
+         mock.patch.object(od.time, "sleep", lambda _s: None):
+        s = od.GraphSession(token_fn=lambda: "tok")
+        assert s.get("https://graph/x").status_code == 401
+    assert req.call_count == 2  # original + exactly one refresh attempt
+
+
 def test_slug():
     assert od.slug("Unit 1: Normalization / BCNF") == "Unit-1-Normalization-BCNF"
     assert od.slug("") == "untitled"
