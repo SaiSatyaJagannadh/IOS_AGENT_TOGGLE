@@ -44,8 +44,11 @@ The first invocation prints a device-login code and URL — the user must open i
 sign in with the Microsoft account that owns the notebook. The token is cached at
 `~/.onenote_agent_token.json` (mode 600) and refreshed silently afterwards; later runs need no login.
 
-If it exits complaining `ONENOTE_CLIENT_ID is not set`, the user has to register a free Azure app
-first — the error message spells out the four portal steps. Relay them, do not try to work around it.
+If it exits complaining `ONENOTE_CLIENT_ID is not set`, there are two ways forward. For a one-off
+run, the user can paste a token from Graph Explorer (developer.microsoft.com/graph/graph-explorer)
+as `ONENOTE_ACCESS_TOKEN` — no Azure app needed, but it expires in about an hour. For repeated use
+they must register a free Azure app; the error message spells out the four portal steps. Relay
+both options, do not try to work around the auth.
 
 ## Constraints
 

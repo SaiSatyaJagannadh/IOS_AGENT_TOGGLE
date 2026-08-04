@@ -10,7 +10,6 @@ AppleScript dictionary, so Graph is the only readable source.
 """
 import argparse
 import base64
-import json
 import mimetypes
 import os
 import re
@@ -36,7 +35,16 @@ OCR_MODEL = "gemini-2.5-flash"
 
 def get_token():
     """Return a valid access token. Prompts for device login only the first time; afterwards
-    MSAL refreshes silently, so this is safe to call repeatedly mid-export."""
+    MSAL refreshes silently, so this is safe to call repeatedly mid-export.
+
+    ONENOTE_ACCESS_TOKEN short-circuits all of this: paste a token from Microsoft's Graph
+    Explorer to try the exporter without registering an Azure app. It expires in about an
+    hour and cannot be refreshed, so it is for proving the pipeline, not for regular use.
+    """
+    pasted = os.getenv("ONENOTE_ACCESS_TOKEN")
+    if pasted:
+        return pasted.strip()
+
     client_id = os.getenv("ONENOTE_CLIENT_ID")
     if not client_id:
         sys.exit(
@@ -108,7 +116,14 @@ class GraphSession(requests.Session):
 
             if r.status_code == 401 and not refreshed:
                 refreshed = True  # token expired mid-run; refresh once, then give up
-                self.headers["Authorization"] = f"Bearer {self._token_fn()}"
+                fresh = self._token_fn()
+                if f"Bearer {fresh}" == self.headers["Authorization"]:
+                    # a pasted Graph Explorer token has no refresh path — say so plainly
+                    print("    401 and the token cannot be refreshed. If this is a pasted "
+                          "ONENOTE_ACCESS_TOKEN it has expired (~1h); grab a fresh one.",
+                          file=sys.stderr)
+                    return r
+                self.headers["Authorization"] = f"Bearer {fresh}"
                 continue
 
             return r

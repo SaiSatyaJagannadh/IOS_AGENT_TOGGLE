@@ -162,13 +162,40 @@ def test_graph_session_refreshes_expired_token():
         assert s.headers["Authorization"] == "Bearer new"
 
 
-def test_graph_session_gives_up_on_repeated_401():
-    """A genuinely revoked grant must surface, not retry-loop on refresh."""
+def test_graph_session_skips_pointless_retry():
+    """If the refresh hands back the same token, retrying it cannot help — surface the 401."""
     with mock.patch.object(od.requests.Session, "request", return_value=_resp(401)) as req, \
          mock.patch.object(od.time, "sleep", lambda _s: None):
         s = od.GraphSession(token_fn=lambda: "tok")
         assert s.get("https://graph/x").status_code == 401
+    assert req.call_count == 1
+
+
+def test_graph_session_gives_up_after_one_real_refresh():
+    """A genuinely revoked grant retries once with the new token, then surfaces."""
+    tokens = iter(["old", "new", "newer"])
+    with mock.patch.object(od.requests.Session, "request", return_value=_resp(401)) as req, \
+         mock.patch.object(od.time, "sleep", lambda _s: None):
+        s = od.GraphSession(token_fn=lambda: next(tokens))
+        assert s.get("https://graph/x").status_code == 401
     assert req.call_count == 2  # original + exactly one refresh attempt
+
+
+def test_pasted_token_short_circuits_msal():
+    """A Graph Explorer token must bypass MSAL entirely so the pipeline can be proven
+    without an Azure app registration."""
+    with mock.patch.dict(od.os.environ, {"ONENOTE_ACCESS_TOKEN": "  paste-me  "}, clear=False):
+        assert od.get_token() == "paste-me"
+
+
+def test_pasted_token_401_does_not_loop():
+    """A pasted token has no refresh path; the second 401 must report, not retry forever."""
+    with mock.patch.dict(od.os.environ, {"ONENOTE_ACCESS_TOKEN": "stale"}, clear=False), \
+         mock.patch.object(od.requests.Session, "request", return_value=_resp(401)) as req, \
+         mock.patch.object(od.time, "sleep", lambda _s: None):
+        s = od.GraphSession()
+        assert s.get("https://graph/x").status_code == 401
+    assert req.call_count == 1  # no point re-sending a token that cannot change
 
 
 def test_slug():

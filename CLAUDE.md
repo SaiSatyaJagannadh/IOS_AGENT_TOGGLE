@@ -28,7 +28,12 @@ nothing locally parseable. Any "read OneNote faster by going local" idea is a de
 
 ## Auth
 
-MSAL device-code flow against the `common` authority, scope `Notes.Read.All`. Requires
+`ONENOTE_ACCESS_TOKEN` short-circuits auth entirely — paste a token from Microsoft's Graph
+Explorer (developer.microsoft.com/graph/graph-explorer, sign in, consent to Notes.Read.All, copy
+the Access token tab) to prove the pipeline without any Azure app. It dies after ~1h and cannot
+refresh, so it is for a first real run, not regular use.
+
+Otherwise: MSAL device-code flow against the `common` authority, scope `Notes.Read.All`. Requires
 `ONENOTE_CLIENT_ID` in `.env` — a public-client Azure app registration with "Allow public client
 flows" enabled. The token cache lands at `~/.onenote_agent_token.json` (mode 600) and refreshes
 silently; only the first run prompts for a browser login.
