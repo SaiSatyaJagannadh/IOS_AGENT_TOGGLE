@@ -57,9 +57,9 @@ def test_page_to_markdown():
         assets.mkdir()
         fetched = []
 
-        def fake_download(_session, url, dest_dir, stem):
+        def fake_download(_session, url, dest_dir, stem, prefer_ext=""):
             fetched.append(url)
-            ext = ".pdf" if "r2" in url else ".png"
+            ext = prefer_ext or (".pdf" if "r2" in url else ".png")
             p = dest_dir / f"{stem}{ext}"
             p.write_bytes(b"stub")
             return p
@@ -81,7 +81,9 @@ def test_page_to_markdown():
     assert "graph.microsoft.com" not in md, "a Graph URL leaked into the document"
     # <object> survives as a link (markdownify would otherwise drop it entirely)
     assert "Attachment: spec.pdf" in md, md
+    # real export saved PDFs as ".bin": Graph serves octet-stream, the filename knows better
     assert "assets/000-1NF-att-0-spec.pdf" in md, md
+    assert ".bin" not in md, md
     # markdown conversion actually happened
     assert "**1NF**" in md and "* atomic values" in md, md
     # the page's own <h1>1NF</h1> duplicated the title heading and must be gone
@@ -227,7 +229,7 @@ def test_same_titled_pages_get_distinct_assets():
     """Two pages sharing a title previously wrote the same asset filenames, clobbering each other."""
     written = []
 
-    def fake_download(_session, _url, dest_dir, stem):
+    def fake_download(_session, _url, dest_dir, stem, prefer_ext=""):
         p = dest_dir / f"{stem}.png"
         written.append(p.name)
         p.write_bytes(b"x")
@@ -245,6 +247,38 @@ def test_same_titled_pages_get_distinct_assets():
                                     do_ocr=False, index=i)
 
     assert len(set(written)) == 2, f"asset filenames collided: {written}"
+
+
+def test_sniff_ext_beats_octet_stream():
+    """Graph labels page images application/octet-stream. Trusting that saved every PNG as
+    .bin, and .bin resolves to application/octet-stream, which silently disabled OCR."""
+    assert od.sniff_ext(b"\x89PNG\r\n\x1a\n\x00\x00") == ".png"
+    assert od.sniff_ext(b"\xff\xd8\xff\xe0abcd") == ".jpg"
+    assert od.sniff_ext(b"GIF89a__") == ".gif"
+    assert od.sniff_ext(b"%PDF-1.7_") == ".pdf"
+    assert od.sniff_ext(b"RIFF\x00\x00\x00\x00WEBP") == ".webp"
+    assert od.sniff_ext(b"nonsense") == ""
+
+
+def test_ocr_reads_content_not_filename():
+    """A PNG named .bin must still be OCR'd; the old name-based check bailed out."""
+    import base64 as _b64
+    png = _b64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    with tempfile.TemporaryDirectory() as tmp:
+        p = Path(tmp) / "image-saved-as.bin"
+        p.write_bytes(png)
+        seen = {}
+
+        def fake_post(_url, headers=None, json=None, timeout=None):
+            seen["mime"] = json["contents"][0]["parts"][1]["inline_data"]["mime_type"]
+            return mock.Mock(raise_for_status=lambda: None, json=lambda: {
+                "candidates": [{"content": {"parts": [{"text": "HELLO"}]}}]})
+
+        with mock.patch.dict(od.os.environ, {"GEMINI_API_KEY": "k"}, clear=False), \
+             mock.patch.object(od.requests, "post", fake_post):
+            assert od.ocr(p) == "HELLO"
+        assert seen["mime"] == "image/png", seen
 
 
 def test_slug():

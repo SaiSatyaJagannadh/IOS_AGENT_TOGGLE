@@ -205,7 +205,29 @@ def fetch_pages(session, section_id):
         return graph_all(session, url.replace("&$orderby=order", "&$orderby=createdDateTime"))
 
 
-def download_resource(session, url, dest_dir, stem):
+# Graph labels page resources application/octet-stream, so Content-Type cannot name the
+# format. Sniffing the bytes is the only reliable source; the extension drives both the
+# docx embed and whether ocr() will even look at the file.
+_MAGIC = (
+    (b"\x89PNG\r\n\x1a\n", ".png"),
+    (b"\xff\xd8\xff", ".jpg"),
+    (b"GIF8", ".gif"),
+    (b"BM", ".bmp"),
+    (b"%PDF", ".pdf"),
+)
+
+
+def sniff_ext(data):
+    """Real extension from magic bytes, or '' if unrecognised."""
+    for sig, ext in _MAGIC:
+        if data.startswith(sig):
+            return ext
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return ".webp"
+    return ""
+
+
+def download_resource(session, url, dest_dir, stem, prefer_ext=""):
     """Fetch one image/attachment. The Authorization header is only ever sent to Graph.
 
     A OneNote page can carry <img src>/<object data> pointing at any host — pasted web
@@ -217,7 +239,10 @@ def download_resource(session, url, dest_dir, stem):
     get = session.get if host in GRAPH_HOSTS else requests.get
     r = get(url, timeout=120)
     r.raise_for_status()
-    ext = mimetypes.guess_extension(r.headers.get("Content-Type", "").split(";")[0]) or ".bin"
+    # Graph serves attachments as application/octet-stream, so the Content-Type alone turns
+    # every PDF and docx into a useless ".bin". The original filename knows better.
+    ctype = mimetypes.guess_extension(r.headers.get("Content-Type", "").split(";")[0])
+    ext = prefer_ext or sniff_ext(r.content[:16]) or ctype or ".bin"
     path = dest_dir / f"{stem}{ext}"
     path.write_bytes(r.content)
     return path
@@ -230,7 +255,10 @@ def ocr(path):
     key = os.getenv("GEMINI_API_KEY")
     if not key:
         return ""
-    mime = mimetypes.guess_type(path.name)[0] or "image/png"
+    data = path.read_bytes()
+    # Sniff the content, not the name: a mislabelled extension made this return early and
+    # silently skipped OCR for every image in a real export.
+    mime = mimetypes.types_map.get(sniff_ext(data[:16]) or path.suffix.lower(), "")
     if not mime.startswith("image/"):
         return ""
     try:
@@ -242,7 +270,7 @@ def ocr(path):
                     {"text": "Transcribe all text in this image, preserving structure. "
                              "Output only the transcription. If there is no text, output NOTEXT."},
                     {"inline_data": {"mime_type": mime,
-                                     "data": base64.b64encode(path.read_bytes()).decode()}},
+                                     "data": base64.b64encode(data).decode()}},
                 ]}]
             },
             timeout=120,
@@ -294,7 +322,9 @@ def page_to_markdown(session, page, assets, do_ocr, index=0):
         if not src:
             continue
         try:
-            path = download_resource(session, src, assets, f"{stem}-att-{i}-{slug(Path(name).stem)}")
+            path = download_resource(session, src, assets,
+                                     f"{stem}-att-{i}-{slug(Path(name).stem)}",
+                                     prefer_ext=Path(name).suffix)
         except requests.RequestException as e:
             print(f"    attachment {name} failed: {e}", file=sys.stderr)
             continue
