@@ -428,5 +428,6 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-# OneNote export output
-out/
+# OneNote export output — every out* dir, not just out/. Exported notes are
+# personal content and must never be committed.
+out*/
