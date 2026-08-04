@@ -24,13 +24,13 @@ Pull a whole OneNote section into one document.
 
 1. **Resolve the section.** If the user did not name one, or named one ambiguously, run:
    ```bash
-   python3 onenote_doc.py --list
+   python3 src/onenote_doc.py --list
    ```
    Show the paths and use AskUserQuestion to pick. Do not guess between two similar names.
 
 2. **Export.** From the repo root:
    ```bash
-   python3 onenote_doc.py "<Notebook>/<Section>" -o out
+   python3 src/onenote_doc.py "<Notebook>/<Section>" -o out
    ```
    Flags: `--no-ocr` (skip image transcription, much faster), `--no-docx` (markdown only),
    `-o DIR` (output directory, default `out/`).
@@ -66,5 +66,5 @@ both options, do not try to work around the auth.
 ## Verify
 
 ```bash
-python3 test_onenote_doc.py     # offline checks for section matching + page HTML localisation
+python3 tests/test_onenote_doc.py     # offline checks for section matching + page HTML localisation
 ```

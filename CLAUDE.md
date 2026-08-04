@@ -8,17 +8,30 @@ A OneNote → document exporter. `onenote_doc.py` pulls every page of a named On
 the Microsoft Graph API and writes one Markdown file plus a `.docx`, downloading embedded images and
 attachments and transcribing image text via Gemini.
 
+## Layout
+
+```
+src/onenote_doc.py          the exporter (all of it)
+tests/test_onenote_doc.py   offline tests; adds ../src to sys.path itself
+.claude/skills|agents/      the /onenote-doc command and subagent
+CLAUDE.md, README.md        must stay at the root
+out*/                       export destinations, gitignored — never commit these
+```
+
+Exported notes are personal content. The ignore rule is `out*/`, deliberately wider than
+one directory: an earlier `-o out_sd` slipped past a narrower `out/` rule and got pushed.
+
 ## Commands
 
 ```bash
-python3 onenote_doc.py --list                       # list every section path available
-python3 onenote_doc.py "ADBMS/Normalization"        # export that section to out/
-python3 onenote_doc.py "Basics" --no-ocr --no-docx  # markdown only, no image transcription
-python3 test_onenote_doc.py                         # the whole test suite (offline, no network)
+python3 src/onenote_doc.py --list                       # list every section path available
+python3 src/onenote_doc.py "ADBMS/Normalization"        # export that section to out/
+python3 src/onenote_doc.py "Basics" --no-ocr --no-docx  # markdown only, no image transcription
+python3 tests/test_onenote_doc.py                         # the whole test suite (offline, no network)
 ```
 
-There is no test framework — `test_onenote_doc.py` is plain asserts run as a script. To run a single
-test, call it directly: `python3 -c "import test_onenote_doc as t; t.test_resolve()"`.
+There is no test framework — `tests/test_onenote_doc.py` is plain asserts run as a script. To run a single
+test, call it directly: `python3 -c "import sys; sys.path.insert(0, "tests"); import test_onenote_doc as t; t.test_resolve()"`.
 
 ## Why Graph, and not local files
 

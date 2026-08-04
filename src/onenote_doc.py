@@ -4,9 +4,9 @@
 Local OneNote data on macOS is an opaque revision-store cache and OneNote for Mac has no
 AppleScript dictionary, so Graph is the only readable source.
 
-  python3 onenote_doc.py --list                 # show every section path you can pull
-  python3 onenote_doc.py "ADBMS/Normalization"  # pull that section -> out/
-  python3 onenote_doc.py "ADBMS" --no-ocr -o ~/Desktop/notes
+  python3 src/onenote_doc.py --list                 # show every section path you can pull
+  python3 src/onenote_doc.py "ADBMS/Normalization"  # pull that section -> out/
+  python3 src/onenote_doc.py "ADBMS" --no-ocr -o ~/Desktop/notes
 """
 import argparse
 import base64
@@ -24,7 +24,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from markdownify import markdownify
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 GRAPH = "https://graph.microsoft.com/v1.0"
 SCOPES = ["Notes.Read.All"]

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Offline checks for the two bits of real logic: section matching and page HTML localisation.
+"""Offline checks for onenote_doc: no network, no credentials, no Graph calls.
 
-    python3 test_onenote_doc.py
+    python3 tests/test_onenote_doc.py
 """
 import sys
 import tempfile
 from pathlib import Path
 from unittest import mock
 
-import onenote_doc as od
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+import onenote_doc as od  # noqa: E402
 
 SECTIONS = [
     ("ADBMS / Unit 1 / Normalization", "id-norm"),
