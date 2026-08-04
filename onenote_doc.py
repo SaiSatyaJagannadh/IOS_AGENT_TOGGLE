@@ -16,6 +16,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 import msal
 import requests
@@ -29,6 +30,7 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 SCOPES = ["Notes.Read.All"]
 TOKEN_CACHE = Path.home() / ".onenote_agent_token.json"
 OCR_MODEL = "gemini-2.5-flash"
+GRAPH_HOSTS = ("graph.microsoft.com",)
 
 
 # ---------------------------------------------------------------- auth
@@ -81,10 +83,21 @@ def get_token():
         sys.exit(f"Login failed: {result.get('error_description', result)}")
 
     if cache.has_state_changed:
-        TOKEN_CACHE.write_text(cache.serialize())
-        TOKEN_CACHE.chmod(0o600)  # token cache is a credential
+        # Create restricted, not create-then-chmod: the refresh token inside is longer-lived
+        # than any access token, and the gap would leave it world-readable on first write.
+        fd = os.open(TOKEN_CACHE, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            fh.write(cache.serialize())
 
     return result["access_token"]
+
+
+def _retry_after(value, fallback):
+    """Retry-After is delay-seconds or an HTTP-date; never let the date form crash a run."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
 
 class GraphSession(requests.Session):
@@ -105,15 +118,19 @@ class GraphSession(requests.Session):
     def request(self, method, url, **kwargs):  # noqa: D102
         kwargs.setdefault("timeout", 120)
         refreshed = False
-        for attempt in range(self.MAX_ATTEMPTS):
+        attempt = 0
+        while True:
             r = super().request(method, url, **kwargs)
 
             if r.status_code in (429, 503, 504) and attempt < self.MAX_ATTEMPTS - 1:
-                wait = min(int(r.headers.get("Retry-After", 2 ** attempt)), 120)
+                wait = min(_retry_after(r.headers.get("Retry-After"), 2 ** attempt), 120)
                 print(f"    throttled ({r.status_code}), retrying in {wait}s", file=sys.stderr)
                 time.sleep(wait)
+                attempt += 1
                 continue
 
+            # A refresh deliberately does NOT consume an attempt: a 401 arriving on the last
+            # throttle retry would otherwise install a good token and never use it.
             if r.status_code == 401 and not refreshed:
                 refreshed = True  # token expired mid-run; refresh once, then give up
                 fresh = self._token_fn()
@@ -127,7 +144,6 @@ class GraphSession(requests.Session):
                 continue
 
             return r
-        return r
 
 
 # ---------------------------------------------------------------- graph
@@ -161,6 +177,8 @@ def list_sections(session):
 def resolve_section(sections, query):
     """Match a user query like 'ADBMS/Normalization' against section paths."""
     terms = [t.strip().lower() for t in re.split(r"[/>]", query) if t.strip()]
+    if not terms:
+        sys.exit(f"No section matches {query!r}. Run --list to see available sections.")
     exact = [s for s in sections if s[0].lower() == query.strip().lower()]
     if exact:
         return exact[0]
@@ -188,7 +206,16 @@ def fetch_pages(session, section_id):
 
 
 def download_resource(session, url, dest_dir, stem):
-    r = session.get(url, timeout=120)
+    """Fetch one image/attachment. The Authorization header is only ever sent to Graph.
+
+    A OneNote page can carry <img src>/<object data> pointing at any host — pasted web
+    images and "insert online picture" links do exactly that. Because the session attaches
+    a bearer token to every request, fetching such a URL through it would hand a live
+    Notes.Read token to whoever controls that address. Off-Graph URLs go out unauthenticated.
+    """
+    host = (urlparse(url).hostname or "").lower()
+    get = session.get if host in GRAPH_HOSTS else requests.get
+    r = get(url, timeout=120)
     r.raise_for_status()
     ext = mimetypes.guess_extension(r.headers.get("Content-Type", "").split(";")[0]) or ".bin"
     path = dest_dir / f"{stem}{ext}"
@@ -234,12 +261,14 @@ def slug(text, limit=60):
     return re.sub(r"[^\w\-]+", "-", text).strip("-")[:limit] or "untitled"
 
 
-def page_to_markdown(session, page, assets, do_ocr):
+def page_to_markdown(session, page, assets, do_ocr, index=0):
     """Fetch one page's HTML, localise its images/attachments, return markdown."""
     r = session.get(f"{GRAPH}/me/onenote/pages/{page['id']}/content?includeIDs=false", timeout=120)
     r.raise_for_status()
     soup = BeautifulSoup(r.text, "lxml")
-    stem = slug(page.get("title") or "untitled")
+    # Index-prefixed: two pages sharing a title (or both untitled) would otherwise
+    # write the same asset filenames and clobber each other silently.
+    stem = f"{index:03d}-{slug(page.get('title') or 'untitled')}"
     ocr_blocks = []
 
     for i, img in enumerate(soup.find_all("img")):
@@ -248,7 +277,7 @@ def page_to_markdown(session, page, assets, do_ocr):
             continue
         try:
             path = download_resource(session, src, assets, f"{stem}-{i}")
-        except requests.HTTPError as e:
+        except requests.RequestException as e:
             print(f"    image {i} failed: {e}", file=sys.stderr)
             continue
         img["src"] = f"{assets.name}/{path.name}"
@@ -266,7 +295,7 @@ def page_to_markdown(session, page, assets, do_ocr):
             continue
         try:
             path = download_resource(session, src, assets, f"{stem}-att-{i}-{slug(Path(name).stem)}")
-        except requests.HTTPError as e:
+        except requests.RequestException as e:
             print(f"    attachment {name} failed: {e}", file=sys.stderr)
             continue
         link = soup.new_tag("a", href=f"{assets.name}/{path.name}")
@@ -344,6 +373,8 @@ def main():
     if not pages:
         sys.exit("That section has no pages.")
     print(f"Pages: {len(pages)}")
+    if not args.no_ocr and os.getenv("GEMINI_API_KEY"):
+        print("OCR on: page images will be sent to Google's Gemini API (--no-ocr to disable)")
 
     out_dir = Path(args.out).expanduser()
     assets = out_dir / "assets"
@@ -353,8 +384,8 @@ def main():
     for n, page in enumerate(pages, 1):
         print(f"  [{n}/{len(pages)}] {page.get('title') or 'Untitled'}")
         try:
-            chunks.append(page_to_markdown(session, page, assets, not args.no_ocr))
-        except requests.HTTPError as e:
+            chunks.append(page_to_markdown(session, page, assets, not args.no_ocr, n))
+        except requests.RequestException as e:
             print(f"    skipped: {e}", file=sys.stderr)
 
     md_path = out_dir / f"{slug(path.split(' / ')[-1])}.md"

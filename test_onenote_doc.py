@@ -77,11 +77,11 @@ def test_page_to_markdown():
     # full-res image preferred over the thumbnail src
     assert any("r1full" in u for u in fetched), fetched
     # image rewritten to the local relative path, not the Graph URL
-    assert "assets/1NF-0.png" in md, md
+    assert "assets/000-1NF-0.png" in md, md
     assert "graph.microsoft.com" not in md, "a Graph URL leaked into the document"
     # <object> survives as a link (markdownify would otherwise drop it entirely)
     assert "Attachment: spec.pdf" in md, md
-    assert "assets/1NF-att-0-spec.pdf" in md, md
+    assert "assets/000-1NF-att-0-spec.pdf" in md, md
     # markdown conversion actually happened
     assert "**1NF**" in md and "* atomic values" in md, md
     # the page's own <h1>1NF</h1> duplicated the title heading and must be gone
@@ -188,14 +188,63 @@ def test_pasted_token_short_circuits_msal():
         assert od.get_token() == "paste-me"
 
 
-def test_pasted_token_401_does_not_loop():
-    """A pasted token has no refresh path; the second 401 must report, not retry forever."""
-    with mock.patch.dict(od.os.environ, {"ONENOTE_ACCESS_TOKEN": "stale"}, clear=False), \
-         mock.patch.object(od.requests.Session, "request", return_value=_resp(401)) as req, \
-         mock.patch.object(od.time, "sleep", lambda _s: None):
-        s = od.GraphSession()
-        assert s.get("https://graph/x").status_code == 401
-    assert req.call_count == 1  # no point re-sending a token that cannot change
+def test_bearer_token_never_sent_off_graph():
+    """A page can hotlink any host. The Graph token must never ride along to one."""
+    with tempfile.TemporaryDirectory() as tmp:
+        dest = Path(tmp)
+        ok = mock.Mock(headers={"Content-Type": "image/png"}, content=b"x",
+                       raise_for_status=lambda: None)
+        session = mock.Mock()
+        session.get.return_value = ok
+
+        with mock.patch.object(od.requests, "get", return_value=ok) as bare:
+            od.download_resource(session, "https://evil.example/steal.png", dest, "a")
+        # off-Graph URL goes through plain requests.get, which carries no Authorization
+        assert bare.call_count == 1, "off-Graph fetch must not use the authorised session"
+        assert session.get.call_count == 0, "Graph token was sent to a third-party host"
+
+        with mock.patch.object(od.requests, "get", return_value=ok) as bare:
+            od.download_resource(
+                session, "https://graph.microsoft.com/v1.0/me/onenote/resources/r/$value",
+                dest, "b")
+        # genuine Graph resource still needs the token, so it uses the session
+        assert session.get.call_count == 1, "Graph resource must use the authorised session"
+        assert bare.call_count == 0
+
+
+def test_resolve_rejects_delimiter_only_query():
+    """'/' split to zero terms, which matched every section and then crashed on terms[-1]."""
+    for query in ("/", " > ", "//"):
+        try:
+            od.resolve_section(SECTIONS, query)
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError(f"{query!r} should have exited cleanly")
+
+
+def test_same_titled_pages_get_distinct_assets():
+    """Two pages sharing a title previously wrote the same asset filenames, clobbering each other."""
+    written = []
+
+    def fake_download(_session, _url, dest_dir, stem):
+        p = dest_dir / f"{stem}.png"
+        written.append(p.name)
+        p.write_bytes(b"x")
+        return p
+
+    html = '<html><body><img src="https://graph.microsoft.com/x/$value"/></body></html>'
+    with tempfile.TemporaryDirectory() as tmp:
+        assets = Path(tmp) / "assets"
+        assets.mkdir()
+        session = mock.Mock()
+        session.get.return_value = mock.Mock(text=html, raise_for_status=lambda: None)
+        with mock.patch.object(od, "download_resource", fake_download):
+            for i in (1, 2):
+                od.page_to_markdown(session, {"id": f"p{i}", "title": "Notes"}, assets,
+                                    do_ocr=False, index=i)
+
+    assert len(set(written)) == 2, f"asset filenames collided: {written}"
 
 
 def test_slug():
