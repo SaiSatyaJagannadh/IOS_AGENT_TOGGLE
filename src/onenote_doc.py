@@ -108,7 +108,9 @@ class GraphSession(requests.Session):
     page content, image and attachment downloads) is covered by one implementation.
     """
 
-    MAX_ATTEMPTS = 5
+    # 5 attempts topped out at an 8s wait, which real OneNote throttling shrugs off — a large
+    # section exhausted it and died. 8 gives ~2min of patience, capped per-sleep at 120s.
+    MAX_ATTEMPTS = 8
 
     def __init__(self, token_fn=get_token):
         super().__init__()
