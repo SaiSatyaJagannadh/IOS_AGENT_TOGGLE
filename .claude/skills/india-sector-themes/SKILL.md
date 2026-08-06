@@ -21,9 +21,11 @@ Consumption.**
 
 ## The cyclicality rule
 
-Sector performance turns on the rate cycle. The notes' worked case:
-**IT falls when the Fed raises, and vice versa.** Crude at lows [50] is tracked as a signal for
-which stocks benefit downstream.
+Sector performance turns on the rate cycle. The worked case, from *MF how to select by daytrader*
+[52]: **IT falls when the Fed raises, and vice versa.**
+
+*Crude oil is low these stocks profit* [50] is a **title with no text** in this export — the
+thesis it names is not recoverable here.
 
 Before taking thematic exposure you need a view on cyclical vs non-cyclical, inflation, and the
 rate direction — otherwise the notes say stay out.
@@ -48,8 +50,8 @@ Real-estate exposure with dividend income. Named: **Nexus** (shopping malls), **
 
 ## The supplier heuristic
 
-Repeated across pages: **look for micro-cap suppliers to macro names** — KPIT, Uno Minda feeding
-Tata Motors and other OEMs — rather than buying the well-covered large cap directly.
+From *Stocks Buying by DTT/PEG* [77]: **look for micro-cap suppliers to macro names** — KPIT,
+Uno Minda feeding Tata Motors and other OEMs — rather than buying the well-covered large cap.
 
 ## Scope
 

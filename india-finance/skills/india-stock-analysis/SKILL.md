@@ -44,6 +44,8 @@ Trendlyne, BSE annual report PDFs.
 - Cash flow, balance sheet — prefer debt-free
 - Past performance, cyclical vs non-cyclical
 - **ROCE 30+ for the last three years**
+- **ROE above 15% across the last 5–10 years** — from *Stock analysis by fund manager Mohan*
+  [61], computed as net income ÷ average shareholders' equity, off the P&L
 - **Debt-to-equity below 1** (screener queries use <0.2)
 - PE under control
 

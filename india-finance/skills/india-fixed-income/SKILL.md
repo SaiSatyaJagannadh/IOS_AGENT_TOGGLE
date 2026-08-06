@@ -11,8 +11,9 @@ From *Fixed deposit FDs* [24], *Gilt or debt vs FD* [4], *Emergency fund* [79],
 
 ## Deposit insurance
 
-**₹5 lakh insured per individual per bank.** The notes reference Stable Money for comparing FD
-rates across banks — spread across banks rather than concentrating above the limit.
+**₹5 lakh insured per individual per bank**, via Stable Money, which the notes use to compare FD
+rates across banks. (The notes state the limit and the tool; they do not themselves say to spread
+deposits across banks.)
 
 ## FD laddering
 

@@ -26,14 +26,26 @@ The most detailed page in this cluster.
 ## Corpus targets
 
 The notes track parallel goals — ₹1 crore [16], ₹55 lakh [31], ₹5 crore [17] — as SIP-to-target
-plans rather than a single number. The mechanism throughout is a long-running SIP left alone;
-*"setup the SIP and leave it for more than 40 years."*
+plans rather than a single number. The mechanism throughout is a long-running SIP left alone — *"setup the SIP and leave it
+for more than 40 years"*, from *MF how to select by daytrader* [52].
 
-## Home loan prepayment [23]
+## Home loan prepayment [23] and clearance [22]
 
-Worked in an attached spreadsheet (`DTT Home Loan Prepay.xlsx`), not prose. A companion
-`DTT Retirement.xlsx` and a `FIRE.xlsx` exist in the export attachments. **The models are in the
-spreadsheets** — read those rather than reconstructing the maths.
+- **Raise the EMI ~10% early** — the earlier the increase, the more it saves
+- **Pay one extra EMI a year**
+- When a rate change offers "reduce EMI or reduce tenure", **always cut the tenure and keep the
+  EMI the same**
+- **Target clearing a 20-year loan in 5–8 years** [22], increasing EMI in the early years and
+  never extending tenure
+- **But do not prepay reflexively.** The note's own framing: think about what that money would
+  earn in equities or elsewhere, and compare against the interest saved. *"Don't clear the home
+  loan if you have any other important things"* — compare against mutual funds, FDs and liquidity
+  needs first
+- **Loan transfer:** input the parameters; if the value at the bottom is positive, the transfer is
+  worth doing
+
+Calculator: `emicalculator.net`. A companion `DTT` spreadsheet is referenced in [22] and exists
+as an `.xlsx` attachment in the full export.
 
 ## Emergency fund
 
@@ -41,8 +53,10 @@ spreadsheets** — read those rather than reconstructing the maths.
 
 ## Honest gaps
 
-*Retirement plan* [92] and several goal pages captured spreadsheets and screenshots rather than
-text. The numbers live in the `.xlsx` attachments in the export.
+*Retirement plan* [92] captured **no text at all** — the page is empty in this export. The corpus
+target pages [16] [17] [31] are similarly thin, holding screenshots rather than prose. The
+`FIRE.xlsx`, `DTT Retirement.xlsx` and `DTT Home Loan Prepay.xlsx` attachments do exist in the
+full export's assets and hold the actual models.
 
 ## Scope
 

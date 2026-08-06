@@ -51,6 +51,7 @@ The notes cite Nifty Smallcap at −40% in FY20 followed by +118% in FY21, and u
 
 ## Debt funds [42]
 
+- **Debt MFs hold a larger market than equity (27%)**
 - Taxed at **your income slab** (not equity LTCG/STCG rules)
 - Better than FD returns after tax for >5 years
 - Rates up → bond value down, and vice versa

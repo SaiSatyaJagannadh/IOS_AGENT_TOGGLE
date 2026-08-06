@@ -27,7 +27,7 @@ Named index funds where a fund is preferred: Motilal Oswal Nifty Bank, Motilal O
 ## Entry rule
 
 **Buy when the index or sector falls 5% or more.** Named examples: Nifty 50 BeES, IT BeES
-(*"buy ITBees if the sector decreases 5% or more — more profit"*), Bank Nifty BeES.
+(*"Buy Itbees if it sector decrease below 5 or more than it will be more profit"*), Bank Nifty BeES.
 
 ## Gold and silver [49]
 

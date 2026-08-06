@@ -6,7 +6,8 @@ allowed-tools: Read, Grep, Glob, WebFetch, WebSearch
 
 # NRI transition checklist
 
-From *NRI precautions India* [32]. This page is a straight checklist and is reproduced in order.
+From *NRI precautions India* [32], a 17-item checklist. Grouped by theme below; the source
+numbering differs.
 
 ## Accounts and KYC
 
@@ -43,7 +44,8 @@ Also: get USA documents in order [item 7 in the original].
 ## Note
 
 This checklist reflects rules as captured and the page is undated. NRI taxation and eligibility
-change often — the note's own first instruction is to see a CA, which supersedes the list.
+change often — and the note includes *"visit a CA for taxation"* as its own item, which
+supersedes anything inferred from the rest.
 
 ## Scope
 
