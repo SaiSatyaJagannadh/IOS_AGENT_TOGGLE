@@ -1,11 +1,14 @@
 # india-finance
 
-Ten skills and one agent, built from an 87-page OneNote section of personal investment research
+Thirteen skills and one agent, built from an 87-page OneNote section of personal investment research
 ("India money management"), exported via `src/onenote_doc.py`.
 
 ```
 india-finance/
   skills/
+    india-investment-priority/  the master allocation order: insurance -> ETFs -> SIPs -> ...
+    india-market-basics/        terminology, biases, macro indicators, market mechanics
+    india-technical-analysis/   indicators, price-volume confirmation, intraday
     india-stock-analysis/    management-first checklist, valuation, screener queries
     india-mutual-funds/      selection, categories, debt funds, exit
     india-etf-index/         ETF vs index on cost, iNAV, dip rule, gold/silver
@@ -22,7 +25,8 @@ india-finance/
 
 ## Provenance
 
-Every skill cites the page numbers it came from, e.g. *Checklist to buy a stock* [56]. Nothing
+Two fidelity audits were run against the source text; findings and fixes are recorded in
+`../EXAMPLES.md`. Every skill cites the page numbers it came from, e.g. *Checklist to buy a stock* [56]. Nothing
 is generic finance writing — where the notes are silent, the skill says so, and where the notes
 record an open question, the skill preserves it as open.
 

@@ -99,10 +99,13 @@ separate from capital gains [60].
 
 ## Gap
 
-*Intraday trading by daytrader* [62] is the largest page in the notes (~50k chars) and is mostly
-screenshots of charts; the text captured here is partial. The "5 golden rules", the paper-trade
-walkthrough and several adjustment tables are referenced in [70] but exist only as images.
-Re-export with OCR to recover them.
+*Intraday trading by daytrader* [62] is the largest page in the notes and **does contain
+substantial text** — indicators, candlestick and chart patterns, and macro mechanics. That
+material lives in `india-technical-analysis`, not here.
+
+What genuinely is missing: the **"5 golden rules"**, the paper-trade walkthrough, and several
+adjustment tables referenced in [70] are images and did not survive this export. Re-run with OCR
+to recover those specifically.
 
 ## Scope
 

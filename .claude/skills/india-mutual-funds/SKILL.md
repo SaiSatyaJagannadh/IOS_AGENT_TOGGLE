@@ -43,6 +43,15 @@ deducted on sale or once a year. Verify online — the note itself says "check o
   Prefer FoF for diversification; **invest lumpsum when the theme is down**, and check exit load
 - **Index** — see `india-etf-index`; the notes generally prefer ETFs on cost
 
+## Raising SIP returns [36]
+
+1. **Step-up SIP** — increase the amount yearly or monthly as income allows
+2. **SIP plus** — when last month's NAV is **below** the currently allocated NAV, invest extra
+   that month
+3. **PE-timed lumpsum** — check Nifty's PE over the last three years on Trendlyne to judge
+   under/over-valuation, and deploy lumpsum into the falls. Examples given: **Covid**, the
+   **2024 Japan market crash**
+
 ## Cycle awareness
 
 Sector funds turn on rate cycles — *"IT sector will be low if Fed increases rates, vice versa."*

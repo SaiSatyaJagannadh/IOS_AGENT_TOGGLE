@@ -43,11 +43,63 @@ Trendlyne, BSE annual report PDFs.
 
 - Cash flow, balance sheet — prefer debt-free
 - Past performance, cyclical vs non-cyclical
-- **ROCE 30+ for the last three years**
+- **ROCE 30+ for the last three years** (per [56] — but see the conflict with [51]'s 13–15% below)
 - **ROE above 15% across the last 5–10 years** — from *Stock analysis by fund manager Mohan*
   [61], computed as net income ÷ average shareholders' equity, off the P&L
 - **Debt-to-equity below 1** (screener queries use <0.2)
 - PE under control
+
+## Step 3b — Industry analysis [51]
+
+**Life cycle** — where is the industry?
+- **Pioneering** — just started, must show future growth
+- **Maturity / saturation** — safe, brand-type companies
+- **Decline** — no market growth
+
+Worked example: PPE-kit makers profited in Covid and not since — a short-stage industry. The
+internet is at maturity. Sector data: `ibef.org/industry/...`
+
+**Competitive forces**, each with the note's own example:
+
+| Force | Example |
+|---|---|
+| Level of competition | More companies around it → lower returns |
+| Threat of new entrants | **Jio disrupted Airtel and Vodafone** |
+| Threat to retail | **JioMart, Zepto** — medium risk, don't expect huge returns |
+| Threat of substitutes | **Netflix/Prime**; **iPhone cameras** replacing camera makers |
+| Supplier power | No uniqueness + limited client base → weak growth |
+| Buyer power | Buyers not buying → risk |
+| Entry barriers | **IRCTC, Nestlé** — network effects cap rivals' share |
+| Government protection | **Harley-Davidson exited over tax** — check protection and permissions |
+
+## Step 3c — Balance sheet and ratios [51]
+
+Check **solvency** (can it clear debt) and **liquidity** (does it have cash flow). Know whether
+you are reading **standalone** or **consolidated** statements — for Reliance, consolidated pulls
+in Jio and the rest.
+
+**Don't lead with the P&L — lead with cash flow.** The test:
+> **Net profit must be high and free cash flow must match it 70–80%** for a good company.
+
+(Cash-flow method differs for banks and NBFCs.)
+
+| Ratio | The note's threshold |
+|---|---|
+| **ROI** | Must exceed **cost of capital** |
+| **ROCE / ROA** | **Ideal range 13–15%** |
+| **D/E** | **~1**; above 1 and rising → leave. Excludes banks, real estate, NBFCs |
+| **D/A** | **< 0.5** — above it implies assets get sold to clear debt |
+| **ICR** | **< 2 bad, > 3 good** |
+| **DSCR** | **< 1 bad, 1.5–2 good** |
+| **Current ratio** | **1.33–3 ideal**; above 3 means cash is being managed poorly |
+| **Quick ratio** | **> 1 and < 2.0** |
+
+For **banks and NBFCs use ROE only** — ROCE includes debt, which distorts them. Don't read ROE
+blindly for loss-making companies.
+
+> **Note a conflict in the source.** [51] gives ROCE/ROA ideal as **13–15%**, while
+> *Checklist to buy a stock* [56] says **ROCE 30+ for three years**. The notes do not reconcile
+> these. Surface both rather than picking one.
 
 ## Step 4 — Valuation
 
@@ -75,12 +127,19 @@ Growth:     Market Cap 5000-20000, same growth/return filters
 High risk:  Market Cap 1000-10000, same growth filters
 ```
 
+## Dividend stocks [10]
+
+ITC is cited at ~3% yield. **Check the last 5 years of growth and capital** — the notes split
+payers into those that grow *with* the dividend and those that don't, where risk is higher.
+
 ## Idea sourcing
 
 Top-down by sector (Tijori) or bottom-up by screener query. Cloning is allowed —
 Dataroma, Ratestar, Quant/PPFAS monthly portfolio disclosures — but the notes warn twice:
 **"don't go into comfort zone by taking stocks from famous person's cloning"**; re-run your own
 analysis. Look for micro-cap suppliers behind macro names (KPIT, Uno Minda → auto OEMs).
+
+Mindset, from *Copy cat investors* [57]: **KCPLTD — Knowledge, Conviction, Patience, Lucky.**
 
 ## Scope
 

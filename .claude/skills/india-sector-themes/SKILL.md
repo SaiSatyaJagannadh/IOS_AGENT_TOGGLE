@@ -19,6 +19,17 @@ Tourism · Cement · Power · Banking · IT · Consumption
 Named as the next growth sectors for thematic allocation [41]: **Banking, IT, Pharma,
 Consumption.**
 
+## Named holdings within sectors
+
+**Defence [13]** — *"risk is very high and stock will have volatility, only for long term growth."*
+Focus on **PSU** companies. Technical-edge names: **Axiscades** (flagged: **political risk, holding
+linked to a BJP politician**), **Paras**, **Centum** (DRDO work, needs research), **Astra Microwave**
+(radar), **Zen Technologies**, **AI Microsystem**.
+
+**Water [9]** — split by segment: **pump** companies and **pipe** companies. Watch
+**Kisan Mouldings** because **APL Apollo is investing** in it. Also **ABM** (software for state
+government and panchayat websites) and **Praj**.
+
 ## The cyclicality rule
 
 Sector performance turns on the rate cycle. The worked case, from *MF how to select by daytrader*
@@ -47,6 +58,10 @@ Real-estate exposure with dividend income. Named: **Nexus** (shopping malls), **
 - Allotment status: BSE `investors/appli_check.aspx`, KFintech `rtiop.kfintech.com/ipostatus`
 - Filings via SEBI — the **DRHP is the main document**, typically 100–600 pages
 - Unlisted tracking: `incredmoney.com`
+
+**Other issue types on the same page:** **rights issues** (existing companies selling extra
+shares), **FPO** (follow-on public offer, when a listed company needs more money), and the
+equivalents for **NFOs** in mutual funds and REITs.
 
 ## The supplier heuristic
 
